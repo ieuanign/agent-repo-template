@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: agent-repo-template backend
+  version: 0.0.0
+  description: |
+    Every response is wrapped in the envelope `{meta, status, code, message, payload}`:
+    `meta` is `{path, timestamp}`, `status` is the HTTP status, `code` is one of `ErrorCode`
+    on failure and null on success, and `message` is a human-readable summary. Each operation's response schema describes
+    only `payload`.
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness
+      responses:
+        "200":
+          description: The server is up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /health/ready:
+    get:
+      operationId: getHealthReady
+      summary: Readiness
+      responses:
+        "200":
+          description: The server can serve requests.
+        "503":
+          description: The server cannot serve requests yet.
+components:
+  schemas:
+    Health:
+      type: object
+      required: [version, environment]
+      properties:
+        version:
+          type: string
+        environment:
+          type: string
+          enum: [dev, staging, production]
+    ErrorCode:
+      type: string
+      enum: [NOT_FOUND, UNAUTHORIZED, FORBIDDEN, VALIDATION, CONFLICT, RATE_LIMITED, TIMEOUT, INTERNAL]

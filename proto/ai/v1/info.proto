@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.v1;
+
+service InfoService {
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+}
+
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  string service = 1;
+  string version = 2;
+}

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Runs lint and test for the workspaces a commit touches, plus their dependents.
+set -euo pipefail
+
+if [ -z "${DEVBOX_SHELL_ENABLED:-}" ]; then
+  if ! command -v devbox >/dev/null 2>&1; then
+    echo "pre-commit: devbox is required (https://www.jetify.com/devbox)" >&2
+    exit 1
+  fi
+  # Absolute path so the re-run targets this worktree's own hook.
+  self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  exec devbox run -- "$self" "$@"
+fi
+
+turbo=./node_modules/.bin/turbo
+if [ ! -x "$turbo" ]; then
+  echo "pre-commit: $turbo not found; run: devbox run -- npm ci" >&2
+  exit 1
+fi
+
+# Same change set turbo's [HEAD] filter uses: tracked diffs (staged or not) plus untracked files.
+changed=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } )
+
+filters=(--filter='...[HEAD]')
+# Here-strings, not pipes: grep -q exits on its first match, and under pipefail the writer's SIGPIPE would fail the test.
+# Mirrors proto/turbo.json lint inputs, which read backend/gen and ai/gen.
+if grep -qE '^(backend|ai)/gen/' <<<"$changed"; then
+  filters+=(--filter=proto)
+fi
+# Mirrors packages/api-client/turbo.json lint inputs, which read backend/api/openapi.yaml.
+if grep -qxF 'backend/api/openapi.yaml' <<<"$changed"; then
+  filters+=(--filter=@agent-repo-template/api-client)
+fi
+
+# Snapshots go through a throwaway index: the real one, or one git hands over in GIT_INDEX_FILE, is never written.
+mkdir -p .scratch
+snapdir=$(mktemp -d .scratch/pre-commit.XXXXXX)
+trap 'rm -rf "$snapdir"' EXIT
+snapshot() {
+  GIT_INDEX_FILE="$snapdir/$1" git add -A &&
+  GIT_INDEX_FILE="$snapdir/$1" git write-tree
+}
+
+before=$(snapshot before)
+"$turbo" run lint:fix "${filters[@]}"
+after=$(snapshot after)
+
+if [ "$before" != "$after" ]; then
+  echo "pre-commit: lint:fix changed these files:" >&2
+  git diff-tree -r --name-only "$before" "$after" | sed 's/^/  /' >&2
+  echo "pre-commit: review them with git diff, stage them and commit again." >&2
+  exit 1
+fi
+
+rm -rf "$snapdir"
+exec "$turbo" run lint test "${filters[@]}"

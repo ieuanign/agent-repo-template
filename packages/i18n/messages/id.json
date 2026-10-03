@@ -1,0 +1,10 @@
+{
+  "home": {
+    "heading": "Agent Repo Template",
+    "tagline": "Monorepo full-stack yang siap dikerjakan agen sejak klon pertama."
+  },
+  "error": {
+    "heading": "Terjadi kesalahan",
+    "retry": "Coba lagi"
+  }
+}

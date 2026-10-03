@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "./theme-reset.css";
+@import "@agent-repo-template/design-tokens";
+
+/* A light or dark class on an ancestor wins; with neither, the device's scheme applies. */
+@custom-variant light {
+  &:where(.light, .light *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: light) {
+    &:where(:not(.dark, .dark *)) {
+      @slot;
+    }
+  }
+}
+
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not(.light, .light *)) {
+      @slot;
+    }
+  }
+}
+
+/* The tokens name the family; next/font supplies the self-hosted face. */
+@theme inline {
+  --font-sans: var(--font-inter);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -1,0 +1,14 @@
+root = "."
+# Absolute paths keep air's output off the read-only source mount.
+tmp_dir = "/tmp/air"
+
+[build]
+# -trimpath matches the image's build so the warm cache is reused.
+cmd = "go build -trimpath -o /tmp/air/server ./cmd/server"
+entrypoint = ["/tmp/air/server"]
+log = "build-errors.log"
+include_ext = ["go"]
+exclude_regex = ["_test\\.go$"]
+send_interrupt = true
+# Values under 1 ms are read as milliseconds: 20 s, inside Compose's 30 s grace period.
+kill_delay = 20000

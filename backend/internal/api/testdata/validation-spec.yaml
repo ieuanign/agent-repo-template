@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: validation test spec
+  version: 0.0.0
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      parameters:
+        - name: probe
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

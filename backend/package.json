@@ -1,0 +1,11 @@
+{
+  "name": "backend",
+  "version": "0.0.0",
+  "scripts": {
+    "lint": "./scripts/lint.sh",
+    "lint:fix": "gofmt -w .",
+    "test": "p=$(go list ./...) && { [ -z \"$p\" ] || go test $p; }",
+    "generate": "go tool oapi-codegen -config api/oapi-codegen.yaml -o gen/openapi/openapi.gen.go api/openapi.yaml",
+    "prepublishOnly": "echo 'backend is released as a Docker image, not to npm' >&2 && exit 1"
+  }
+}

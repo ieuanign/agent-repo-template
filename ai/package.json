@@ -1,0 +1,10 @@
+{
+  "name": "ai",
+  "version": "0.0.0",
+  "scripts": {
+    "lint": "./scripts/lint.sh",
+    "lint:fix": "./scripts/lint-fix.sh",
+    "test": "uv run --locked pytest",
+    "prepublishOnly": "echo 'ai is released as a Docker image, not to npm' >&2 && exit 1"
+  }
+}

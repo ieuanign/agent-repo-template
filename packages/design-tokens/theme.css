@@ -1,0 +1,80 @@
+/* Values are placeholders: no design intent yet, beyond light keeping web's original four colours. */
+@theme {
+  --color-background: unset;
+  --color-foreground: unset;
+  --color-card: unset;
+  --color-card-foreground: unset;
+  --color-popover: unset;
+  --color-popover-foreground: unset;
+  --color-primary: unset;
+  --color-primary-foreground: unset;
+  --color-secondary: unset;
+  --color-secondary-foreground: unset;
+  --color-muted: unset;
+  --color-muted-foreground: unset;
+  --color-accent: unset;
+  --color-accent-foreground: unset;
+  --color-destructive: unset;
+  --color-destructive-foreground: unset;
+  --color-border: unset;
+  --color-input: unset;
+  --color-ring: unset;
+
+  --font-sans: Inter;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-4xl: 1.625rem;
+
+  --spacing: 0.25rem;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      --color-background: #ffffff;
+      --color-foreground: #111827;
+      --color-card: #ffffff;
+      --color-card-foreground: #111827;
+      --color-popover: #ffffff;
+      --color-popover-foreground: #111827;
+      --color-primary: #1d4ed8;
+      --color-primary-foreground: #fafafa;
+      --color-secondary: #0f766e;
+      --color-secondary-foreground: #fafafa;
+      --color-muted: #f5f5f5;
+      --color-muted-foreground: #737373;
+      --color-accent: #f5f5f5;
+      --color-accent-foreground: #171717;
+      --color-destructive: #dc2626;
+      --color-destructive-foreground: #fafafa;
+      --color-border: #e5e5e5;
+      --color-input: #e5e5e5;
+      --color-ring: #a1a1a1;
+    }
+
+    @variant dark {
+      --color-background: #0a0a0a;
+      --color-foreground: #fafafa;
+      --color-card: #171717;
+      --color-card-foreground: #fafafa;
+      --color-popover: #171717;
+      --color-popover-foreground: #fafafa;
+      --color-primary: #60a5fa;
+      --color-primary-foreground: #0a0a0a;
+      --color-secondary: #2dd4bf;
+      --color-secondary-foreground: #0a0a0a;
+      --color-muted: #262626;
+      --color-muted-foreground: #a1a1a1;
+      --color-accent: #262626;
+      --color-accent-foreground: #fafafa;
+      --color-destructive: #f87171;
+      --color-destructive-foreground: #fafafa;
+      --color-border: #ffffff1a;
+      --color-input: #ffffff26;
+      --color-ring: #737373;
+    }
+  }
+}

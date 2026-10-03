@@ -1,0 +1,6 @@
+# Gitignored files a fresh worktree needs copied in (gitignore syntax).
+.claude/settings.local.json
+.envrc
+
+# Must stay the last line: matching is last-match-wins, so only here does it stop copying existing worktrees into a new one.
+!.claude/worktrees/**

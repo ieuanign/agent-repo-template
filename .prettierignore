@@ -1,0 +1,17 @@
+# Generated code
+backend/gen/
+ai/gen/
+**/*.gen.*
+packages/api-client/src/schema.d.ts
+
+# Lock files
+package-lock.json
+
+# Build output
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+next-env.d.ts

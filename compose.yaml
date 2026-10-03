@@ -1,0 +1,158 @@
+name: agent-repo-template
+
+# Shared by backend and the migrate one-shot so both compile the same source with the same embedded migrations.
+x-backend-source: &backend-source
+  build:
+    context: ./backend
+    target: dev
+  volumes:
+    - ./backend:/src:ro
+    - gocache:/root/.cache/go-build
+  env_file: secrets/postgres.env
+  environment: &backend-env
+    APP_ENV: dev
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    env_file: secrets/postgres.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    # The image's VOLUME and PGDATA live under /var/lib/postgresql, not .../data.
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+  traefik:
+    image: traefik:v3.7.13
+    # Routes come only from labels on each service's own block; exposedByDefault=false keeps ai unrouted.
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --entrypoints.http.address=:4008
+    ports:
+      - "4008:4008"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # Runs from source, so a new migration applies without an image rebuild.
+  migrate:
+    <<: *backend-source
+    # -trimpath matches the image's build so the warm cache is reused.
+    entrypoint: ["go", "run", "-trimpath", "./cmd/migrate"]
+    command: ["up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Runs the dev image's baked binary; the entrypoint lets `run seed -reset` pass the flag.
+  seed:
+    <<: *backend-source
+    entrypoint: ["/usr/local/bin/seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  backend:
+    <<: *backend-source
+    # A service-level map replaces the anchor's whole; merge it back in. No depends_on: ai is not a readiness dependency.
+    environment:
+      <<: *backend-env
+      AI_HOST: ai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+    # Runs the binary air builds; start_period covers air's first in-container build.
+    healthcheck:
+      test: ["CMD", "/tmp/air/server", "healthcheck"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+      start_interval: 1s
+    # Longer than air's kill_delay so the server drains before Compose kills it.
+    stop_grace_period: 30s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=PathPrefix(`/api`)
+      - traefik.http.routers.backend.entrypoints=http
+      - traefik.http.services.backend.loadbalancer.server.port=8080
+
+  # Internal only: no ports or labels, reached as ai:50051.
+  ai:
+    build:
+      context: ./ai
+      target: dev
+    # Mounted over the image's WORKDIR: the editable install resolves here, and it hides the baked _buildinfo.py.
+    volumes:
+      - ./ai:/app:ro
+    environment:
+      APP_ENV: dev
+    # Same interpreter as watchfiles' serve, so make dev's --wait blocks until ai is ready.
+    healthcheck:
+      test: ["CMD", "python", "-m", "aisvc", "healthcheck"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    # Longer than watchfiles' --sigint-timeout so the server drains before Compose kills it.
+    stop_grace_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      target: dev
+    # Read-write: next dev rewrites next-env.d.ts. The anonymous volume keeps the image's linux node_modules.
+    volumes:
+      - ./package.json:/repo/package.json
+      - ./package-lock.json:/repo/package-lock.json
+      - ./web:/repo/web
+      - ./packages:/repo/packages
+      - /repo/node_modules
+      - nextcache:/repo/web/.next
+    environment:
+      APP_ENV: dev
+    init: true
+    # Node, not curl: neither web image ships curl and production has no shell; start_period covers next dev's first compile.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/ready').then((r) => process.exit(r.status === 200 ? 0 : 1), () => process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+      start_interval: 1s
+    stop_grace_period: 30s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=PathPrefix(`/`)
+      - traefik.http.routers.web.entrypoints=http
+      - traefik.http.services.web.loadbalancer.server.port=3000
+
+  # Profile-only and unlabelled: make dev never starts it, and it reaches web through Traefik as a browser does.
+  e2e:
+    build:
+      context: .
+      dockerfile: e2e/Dockerfile
+    profiles: [e2e]
+    volumes:
+      - ./e2e/tests:/repo/e2e/tests:ro
+      - ./packages/design-tokens:/repo/packages/design-tokens:ro
+    environment:
+      BASE_URL: http://traefik:4008
+    init: true
+
+volumes:
+  pgdata:
+  gocache:
+  nextcache:

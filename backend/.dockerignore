@@ -1,0 +1,2 @@
+# turbo rewrites its logs on every lint, which would bust the COPY layer.
+.turbo/

@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE projects ADD COLUMN code text;
+COMMIT;

@@ -1,0 +1,89 @@
+.scratch/
+.DS_Store
+.claude/worktrees/
+.claude/settings.local.json
+
+# devbox: generated environment + isolated gh/claude state (never commit credentials)
+.devbox/
+.devbox-state/
+.envrc
+.direnv/
+
+# env / secrets (only SOPS-encrypted files under secrets/ are committed)
+.env
+.env.*
+!.env.example
+secrets/*
+!secrets/*.sops.env
+*.pem
+*.key
+
+# turborepo
+.turbo/
+
+# graphify
+graphify-out/
+
+# python (ai/)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+ai/src/aisvc/platform/_buildinfo.py
+
+# go (backend/)
+backend/bin/
+*.exe
+*.test
+*.out
+coverage.txt
+go.work.sum
+
+# node / next.js (web/)
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# react native / expo (mobile/)
+.expo/
+.expo-shared/
+web-build/
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/local.properties
+*.jks
+*.keystore
+!debug.keystore
+*.p8
+*.p12
+*.mobileprovision
+xcuserdata/
+DerivedData/
+
+# docker local data
+pgdata/
+
+# editors / logs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.log

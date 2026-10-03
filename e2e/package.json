@@ -1,0 +1,15 @@
+{
+  "name": "e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent-repo-template/design-tokens": "*",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.19.0",
+    "typescript": "~6.0.3"
+  }
+}

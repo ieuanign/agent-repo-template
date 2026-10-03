@@ -1,0 +1,6 @@
+/* Leaves only the design tokens' colours, radii and fonts as utilities. */
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+  --font-*: initial;
+}

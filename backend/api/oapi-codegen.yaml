@@ -1,0 +1,13 @@
+# No `output` key: the CLI honours -o only when the config sets none, and lint redirects it.
+package: openapi
+generate:
+  gin-server: true
+  strict-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  # Keeps ErrorCode, which no operation references, in the models and the served spec.
+  skip-prune: true
+compatibility:
+  # Served at /api/openapi.json; without this the embedded copy renames getHealth to GetHealth.
+  preserve-original-operation-id-casing-in-embedded-spec: true

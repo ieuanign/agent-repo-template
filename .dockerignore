@@ -1,0 +1,13 @@
+# Bare patterns match only at the context root, so nested folders need **/.
+mobile/
+secrets/
+**/node_modules
+**/.venv
+**/.next
+**/.turbo
+# Gitignored local state: credentials, env files and agent worktrees must never reach a builder layer.
+.scratch/
+.claude/
+.devbox-state/
+**/.env
+**/.env.*

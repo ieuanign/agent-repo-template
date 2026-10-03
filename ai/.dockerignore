@@ -1,0 +1,7 @@
+.venv/
+# turbo rewrites its logs on every lint, which would bust the COPY layer.
+.turbo/
+**/__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

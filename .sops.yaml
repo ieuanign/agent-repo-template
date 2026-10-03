@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: ^secrets/[^/]+\.sops\.env$
+    # make bootstrap adds the first recipient; docs/secrets.md adds the rest.
+    age: []

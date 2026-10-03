@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "ieuanign": {
+      "source": {
+        "source": "github",
+        "repo": "ieuanign/skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "mattpocock-skills@claude-plugins-official": true,
+    "ieuanign-skills@ieuanign": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "home": {
+    "heading": "Agent Repo Template",
+    "tagline": "A full-stack monorepo an agent can work in from the first clone."
+  },
+  "error": {
+    "heading": "Something went wrong",
+    "retry": "Try again"
+  }
+}

@@ -1,0 +1,19 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/ieuanign/agent-repo-template/backend/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: ../backend/gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go:v1.6.2
+    out: ../backend/gen
+    opt: paths=source_relative
+  - remote: buf.build/protocolbuffers/python:v36.2
+    out: ../ai/gen
+  - remote: buf.build/protocolbuffers/pyi:v36.2
+    out: ../ai/gen
+  - remote: buf.build/grpc/python:v1.84.0
+    out: ../ai/gen
