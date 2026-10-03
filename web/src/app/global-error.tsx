@@ -18,7 +18,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="id">
+    <html lang="en">
       <body>
         <title>{TITLE}</title>
         <GlobalErrorView reset={reset} />

@@ -9,8 +9,8 @@ The locales and the catalogue text web and mobile both show.
 
 ## Exports
 
-- `LOCALES` — the supported languages, `["id", "en"]`.
-- `DEFAULT_LOCALE` — `"id"`.
+- `LOCALES` — the supported languages, `["en", "id"]`.
+- `DEFAULT_LOCALE` — `"en"`.
 - `Locale` — the type of one entry in `LOCALES`.
 - `messages` — the shared catalogues keyed by `Locale`. `en` is typed against `id`, so an `en` missing
   a key fails `tsc`.

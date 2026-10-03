@@ -90,7 +90,7 @@ The browser suite in [`e2e/`](../e2e/) checks what only a browser sees on the ho
 
 - under both the light and the dark colour scheme, the heading is coloured with that theme's
   `primary`, `body` is painted with its `background`, and `main` is padded 16px on every side;
-- the language order: Bahasa Indonesia with no cookie and no `Accept-Language`, the header when
+- the language order: English with no cookie and no `Accept-Language`, the header when
   there is no cookie, and the `locale` cookie over the header;
 - an unknown path answers 404 with the localised not-found page;
 - the HMR websocket connects through Traefik and receives a frame.

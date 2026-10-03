@@ -308,11 +308,11 @@ response}` arrive as backend sent them. `204` and `304` have no body.
 
 ## Language
 
-- web renders in Bahasa Indonesia (`id`) by default and in English (`en`) when asked. Before sign-in
+- web renders in English (`en`) by default and in Bahasa Indonesia (`id`) when asked. Before sign-in
   the locale is, in order:
-  1. the `locale` cookie, when its value is exactly `id` or `en`; any other value is ignored;
+  1. the `locale` cookie, when its value is exactly `en` or `id`; any other value is ignored;
   2. otherwise the best match in `Accept-Language`, by q value, on the primary language subtag;
-  3. otherwise `id`.
+  3. otherwise `en`.
 - The locale is worked out on the server, per request, in `src/lib/i18n/request.ts`, so the first
   render is already in the right language. It is never kept in local storage: the server cannot read
   it, so the page would render in one language and then flip. It never comes from an IP lookup: an
@@ -367,9 +367,9 @@ cover it, each rendering its view from `src/ui/`:
   root layouts or a dynamic root segment
   ([Next.js `not-found`](https://nextjs.org/docs/app/api-reference/file-conventions/not-found)); the
   root `not-found.tsx` already renders inside the root layout, in the request's language.
-- `global-error.tsx` replaces the root layout, so it renders its own `<html lang="id">` and `<body>`,
+- `global-error.tsx` replaces the root layout, so it renders its own `<html lang="en">` and `<body>`,
   imports `globals.css`, and sets its title with React's `<title>` element. Its copy lives in
-  `ui/GlobalError/constants.ts` in both languages, Bahasa Indonesia first, because the catalogues and
+  `ui/GlobalError/constants.ts` in both languages, English first, because the catalogues and
   the chosen language come from the layout that failed.
 - Both retry buttons call the `reset` Next.js passes
   ([Next.js `error`](https://nextjs.org/docs/app/api-reference/file-conventions/error)).
