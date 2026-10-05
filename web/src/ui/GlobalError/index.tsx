@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/Button";
 import { COPY } from "@/ui/GlobalError/constants";
+import type { GlobalErrorViewProps } from "@/ui/GlobalError/types";
 
-export function GlobalErrorView({ reset }: { reset: () => void }) {
+export function GlobalErrorView({ reset }: GlobalErrorViewProps) {
   return (
     <main className="p-4">
       <h1 className="text-primary text-2xl font-semibold">{COPY.en.heading}</h1>

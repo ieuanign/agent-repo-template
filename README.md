@@ -103,7 +103,7 @@ devbox installs a pre-commit hook that fixes and checks the workspaces a commit 
 
 ## Docs
 
-System-wide decisions are recorded in `docs/adr/`; service-scoped ones in `<service>/docs/adr/`. Each service carries a `README.md` for its role and stack and a `CLAUDE.md` for its hard rules. `CONTEXT-MAP.md` lists the domain contexts and how they relate.
+System-wide decisions are recorded in `docs/adr/`; service-scoped ones in `<service>/docs/adr/`. Each service carries a `README.md` for its role and stack and a `CLAUDE.md` for its hard rules; the ones tied to particular files are path-scoped rules under `.claude/rules/`. `CONTEXT-MAP.md` lists the domain contexts and how they relate.
 
 ## Maintaining the template
 

@@ -5,11 +5,12 @@ import { withUniwind } from "uniwind";
 import { Button } from "@/components/Button";
 import { Text } from "@/components/Text";
 import { COPY } from "@/ui/GlobalError/constants";
+import type { GlobalErrorProps } from "@/ui/GlobalError/types";
 
 const SafeAreaView = withUniwind(RNSafeAreaView);
 
 // Renders outside every provider, so no translator and no ContentColumn (it needs KeyboardProvider).
-export default function GlobalError({ retry }: { retry: () => void }) {
+export default function GlobalError({ retry }: GlobalErrorProps) {
   return (
     <SafeAreaView
       edges={["top", "right", "bottom", "left"]}
