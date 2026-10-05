@@ -4,8 +4,8 @@ A full-stack monorepo boilerplate that a coding agent can work in from the first
 
 What makes it ready for an agent:
 
-- **`CLAUDE.md` and `.claude/rules/`** hold the working rules: surgical changes, stacked pull requests, the pre-commit hook, scratch files, worktree removal, code comments and review.
-- **`.claude/settings.json`** declares the skill plugins, so Claude Code offers to install them when you trust the folder: [mattpocock-skills](https://github.com/mattpocock/skills) and [ieuanign-skills](https://github.com/ieuanign/skills), which provides `/dev-loop`, the issue-to-pull-request pipeline.
+- **`CLAUDE.md` and `.claude/rules/`** hold the working rules: surgical changes, stacked pull requests, the pre-commit hook, scratch files, worktree removal, code comments and review. Where a rule is long, `.claude/rules/` holds its instruction and `.claude/reference/` the rest.
+- **`.claude/settings.json`** refuses the usual forms of a forced worktree removal, and declares the skill plugins, so Claude Code offers to install them when you trust the folder: [mattpocock-skills](https://github.com/mattpocock/skills) and [ieuanign-skills](https://github.com/ieuanign/skills), which provides `/dev-loop`, the issue-to-pull-request pipeline.
 - **`docs/agents/`** answers what those skills ask a repository: where issues live, the label strings, the branch and pull request formats, and the setup and full-suite commands.
 - **`make check`** is the one command that says a change is done, and the pre-commit hook runs the same lint and tests on what a commit touches.
 
@@ -28,15 +28,13 @@ npm install && npm run generate -w proto
 
 The home page's heading is in `packages/i18n/messages/`.
 
-> Mobile is not scaffolded yet. ADRs 0006 and 0007 in `docs/adr/` record how it will be built.
-
 ## Services
 
 | Service   | Path       | Stack                                                                                  |
 | --------- | ---------- | -------------------------------------------------------------------------------------- |
 | AI        | `ai/`      | Python 3.14 + uv, gRPC, modular monolith                                               |
 | Backend   | `backend/` | Go 1.27 (pinned in `devbox.json`), gin, sqlx, oapi-codegen, modular monolith           |
-| Frontend  | `web/`     | Next.js 16.x, Tailwind v4, TanStack Query, zustand, npm                                |
+| Frontend  | `web/`     | Next.js 16.x, Tailwind v4, npm                                                         |
 | Mobile    | `mobile/`  | Expo SDK 58 / React Native 0.88, Uniwind, TanStack Query, zustand, npm                 |
 
 ## Topology
@@ -50,7 +48,7 @@ Traefik fronts one host: `/api/*` routes to backend and `/` to web. Each route i
 ├── ai/                  # Python modular monolith
 ├── backend/             # Go modular monolith
 ├── web/                 # Next.js frontend
-├── mobile/              # React Native app (not scaffolded yet)
+├── mobile/              # React Native app
 ├── packages/
 │   ├── api-client/      # typed backend client generated from its OpenAPI spec
 │   ├── design-tokens/   # shared design system tokens (Tailwind + Uniwind)
@@ -89,7 +87,7 @@ Traefik fronts one host: `/api/*` routes to backend and `/` to web. Each route i
 
 ## Getting started
 
-Prerequisites: Docker is the only host prerequisite; `devbox shell` provides the rest of the toolchain.
+Prerequisites: devbox and Docker on the host; `devbox shell` provides the rest of the toolchain. mobile also needs Xcode or Android Studio, as [`mobile/README.md`](mobile/README.md) says.
 
 ```sh
 devbox shell
