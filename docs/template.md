@@ -6,8 +6,9 @@ made from the template shares no history with it and is expected to diverge: it 
 domain, and may replace a whole part of the stack. A merge would bring in every template change,
 wanted or not; a cherry-pick brings in only the commit someone chose.
 
-`devbox shell` adds the template as the git remote `template`. Inside the template itself it adds
-nothing.
+`devbox shell` adds the template as the git remote `template`, and makes `origin` the push default when
+none is set, since `gh stack` will not choose between two remotes. Inside the template itself it does
+neither.
 
 ## Porting a commit
 
