@@ -32,10 +32,12 @@ web/
     ├── app/                # routes only: the root layout, pages, global CSS and the theme reset
     ├── ui/<View>/          # one view per route, mirroring app/
     ├── core/               # constants, env and utilities, the backend client and API_URLS
+    ├── components/         # the kit: Button
+    ├── lib/                # cn, and in i18n/ next-intl's request configuration and the locale resolver
     └── mocks/              # the MSW server and its default handlers
 ```
 
-`components/`, `lib/`, `context/` and `hooks/` are created under `src/` when they first hold something.
+`context/` and `hooks/` are created under `src/` when they first hold something.
 
 The rules behind this layout are in [`CLAUDE.md`](./CLAUDE.md).
 

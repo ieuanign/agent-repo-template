@@ -2,8 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/Button";
+import type { ErrorViewProps } from "@/ui/Error/types";
 
-export function ErrorView({ reset }: { reset: () => void }) {
+export function ErrorView({ reset }: ErrorViewProps) {
   const t = useTranslations("error");
   return (
     <main className="p-4">

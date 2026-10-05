@@ -15,7 +15,7 @@ in [`README.md`](./README.md).
 | Keyboard      | react-native-keyboard-controller                                 |
 | Translation   | use-intl, with `@agent-repo-template/i18n`                       |
 | Animation     | react-native-reanimated                                          |
-| Icons         | Tabler, through the one `Icon` atom                              |
+| Icons         | an icon library, through the one `Icon` atom                     |
 | Server state  | TanStack Query                                                   |
 | Client state  | zustand, with `persist` on AsyncStorage                          |
 | Forms         | TanStack Form                                                    |
@@ -26,27 +26,16 @@ in [`README.md`](./README.md).
 | Unit tests    | jest-expo, React Native Testing Library with `userEvent`, MSW    |
 | Configuration | `src/core/env.ts`                                                |
 
+TanStack Form, `expo-image` and an icon library are not installed yet; their rows and rules bind the
+first use.
+
 ## Layout
 
-```
-app.config.ts       # the Expo config and its test, beside index.ts and global.css
-src/app/            # expo-router routes only: layouts and route files
-src/ui/<Screen>/    # one route's screen, mirroring src/app
-src/components/     # the kit: a one-file component flat, a larger one in its own folder
-src/core/           # constants, env, utilities and the TanStack Query client
-src/lib/            # third-party setup
-src/lib/i18n/       # the merged catalogues and the language resolver
-src/lib/utils.ts    # cn, the kit's class-name merge
-src/state/          # zustand stores
-src/mocks/          # the MSW server and its default handlers, for Jest
-src/test/           # test helpers that are not mocks
-src/hooks/          # hooks used by more than one screen
-messages/           # mobile's own id and en catalogues; shared text comes from @agent-repo-template/i18n
-environments/       # dev, staging and production settings
-assets/             # icons and the splash image
-```
+The tree is in [`README.md`](./README.md#project-structure).
 
 - Each folder is created when it first holds something.
+- `src/core/` holds constants, env, utilities and the TanStack Query client; `src/lib/` holds
+  third-party setup; `src/test/` holds test helpers that are not mocks.
 - A route file renders its `src/ui` screen and wires params; the markup lives in the screen.
 - Route files export the default component only, plus `ErrorBoundary` or `unstable_settings` where
   expo-router reads them.
@@ -55,12 +44,12 @@ assets/             # icons and the splash image
 
 Atomic design. A component is as small as it can usefully be, and its **tier** decides where it lives:
 
-| Tier         | What it is                                                             | Where              |
-| ------------ | ---------------------------------------------------------------------- | ------------------ |
-| **Atom**     | One element, no domain knowledge — `Button`, `Icon`, `Text`, `Spinner` | `src/components/`  |
-| **Molecule** | A few atoms, one job — a field with its label and error, a toast       | `src/components/`  |
-| **Organism** | A composed section — a header, a project summary panel                 | `src/components/`  |
-| **Screen**   | One route's whole view, assembling the above                           | `src/ui/<Screen>/` |
+| Tier         | What it is                                                              | Where              |
+| ------------ | ----------------------------------------------------------------------- | ------------------ |
+| **Atom**     | One element, no domain knowledge — `Button`, `Text`, an icon, a spinner | `src/components/`  |
+| **Molecule** | A few atoms, one job — a field with its label and error, a toast        | `src/components/`  |
+| **Organism** | A composed section — a header, a project summary panel                  | `src/components/`  |
+| **Screen**   | One route's whole view, assembling the above                            | `src/ui/<Screen>/` |
 
 **A component with more than one file lives in its own folder.** One file stays flat
 (`ContentColumn.tsx`); a second file, such as its test or its styles, moves it into
@@ -70,8 +59,7 @@ utils collect.
 **A component starts local and moves on its second caller.** What one screen renders lives in that
 screen's folder; it earns a place in `src/components/` when a second screen wants it.
 
-**An atom knows nothing about the domain.** `Button` takes a label. Domain vocabulary enters at the
-organism tier.
+**An atom knows nothing about the domain.** Domain vocabulary enters at the organism tier.
 
 **Composition and fetching stay apart.** A screen calls hooks and composes; everything in
 `src/components/` takes props and renders.
@@ -82,41 +70,15 @@ lowercase names.
 
 **A file copied from the kit is ours, and is edited before it is committed.** Every colour, radius
 and font class names a token, the file goes into `src/components/` under a PascalCase name with its
-`cva` variants split into `styles.ts`, and its Lucide imports are rewritten to Tabler. `cn` is `src/lib/utils.ts`.
+`cva` variants split into `styles.ts`, and its Lucide imports are rewritten to go through `Icon`. `cn` is `src/lib/utils.ts`.
 
-**Button renders its label through `Text`**, and `Text` carries `font-sans`, so every label is Inter.
+**A Button's label is a `Text` child**, and `Text` carries `font-sans`, so every label is Inter.
 
-**Icons come through one `Icon` atom**, the one place icons are imported, each icon by its own
-module path.
-
-## File layout within a folder
-
-The component file builds the component. Everything else has a home beside it:
-
-```
-src/ui/<Screen>/ or src/components/<Name>/
-  index.tsx          # the screen or component itself — a route renders its screen's
-  styles.ts          # the component's cva variants
-  types.ts           # every type and interface the folder declares, props included
-  hooks/             # the folder's own hooks
-  constants.ts       # literals, lookup tables, tuning values
-  utils.ts           # pure functions — formatting, clamping, deriving
-  *.test.ts(x)       # colocated
-```
-
-- **Variants live in `styles.ts`**, so the component file names its classes and never declares them.
-- **Constants live in `constants.ts`**; one shared across screens moves to `src/core/`.
-- **Pure functions live in `utils.ts`**, which is also what lets them be tested without rendering.
-- **A folder's own hooks live in its `hooks/`**; one used by more than one screen moves to
-  `src/hooks/`.
-- **Every `type` and `interface` a folder declares lives in its `types.ts`**, so a component file
-  opens on the component. An inline annotation on a local helper's parameter stays where it is.
+**`Icon` imports each icon by its own module path.**
 
 ## Imports
 
-- Imports are absolute: `@/` for `src/`, `@messages/` for the catalogues. Never a relative path,
-  not even to a file beside the importer.
-- Metro reads the aliases from `tsconfig.json`'s `paths`, and Jest from `moduleNameMapper` in
+- Metro reads the `@/` and `@messages/` aliases from `tsconfig.json`'s `paths`, and Jest from `moduleNameMapper` in
   `jest.config.js`, so both lists change together.
 
 ## Naming
@@ -125,8 +87,6 @@ src/ui/<Screen>/ or src/components/<Name>/
   `photo.${id}`.
 - Maestro flows in `e2e-mobile/` find elements by visible text. A `testID` is added only where text
   cannot identify an element, named by the rule above.
-- An API field's name stops at the destructure that reads it.
-- Catalogue namespaces and keys are camelCase at every level (`home`, `error`, `notFound`).
 
 ## State
 
@@ -182,11 +142,6 @@ TanStack Form is installed with the first form, and every form is one.
 
 **Re-renders**
 
-- Subscribe to the narrowest thing: a derived boolean over the raw object, and nothing for a value
-  only an event handler reads.
-- Derived values compute during render.
-- Effect dependencies are primitives.
-- A costly initial value takes the callback form: `useState(() => parse(raw))`.
 - Independent requests run together (`Promise.all`).
 - The React Compiler is on, so `memo`, `useMemo` and `useCallback` are written by hand only for a
   measured problem it misses.
@@ -236,24 +191,7 @@ TanStack Form is installed with the first form, and every form is one.
 
 **Catalogues**
 
-- Every user-facing string comes from a catalogue, one top-level namespace per screen, named after
-  its folder under `src/ui/` in camelCase (`ui/NotFound` → `notFound`). Namespaces and keys are
-  camelCase at every level.
-- mobile's own namespaces live in `messages/id.json` and `messages/en.json`, each imported by a
-  literal `@messages/` path. Shared namespaces come from
-  [`@agent-repo-template/i18n`](../packages/i18n/README.md).
-- `src/lib/i18n/messages.ts` merges the two per language as `{...shared, ...own}`. `tsc` fails when
-  `en` lacks a key `id` has, and when a mobile namespace has a shared one's name.
-- Identical text is shared; text that differs stays in its app. A whole namespace starts in its app
-  and moves to `@agent-repo-template/i18n` once the other app needs the same text; a namespace is never
-  split, and moving one changes no call site. A shared namespace that loses one of its two apps moves
-  back into the app still reading it, or is deleted if neither does, in the change that drops the
-  last call. web follows the same rules ([`../web/CLAUDE.md`](../web/CLAUDE.md)).
-- The namespace is always a string literal: `useTranslations("errorCode")`, or a sub-namespace such
-  as `"errorCode.project"`. The key may be dynamic (`t(error.code)`). A root translator with a built
-  path is never used. Review enforces it.
-- `errorCode` arrives with the first screen that shows a backend error, and is shared from its first
-  use.
+- `src/lib/i18n/messages.ts` merges the shared and own catalogues per language.
 
 **Hermes and `Intl`**
 
@@ -264,18 +202,6 @@ TanStack Form is installed with the first form, and every form is one.
 - `Intl.Locale`, `RelativeTimeFormat`, `ListFormat`, `DisplayNames` and
   `DateTimeFormat.prototype.formatRange` are absent on Hermes. `jest.setup.ts` deletes them, so a
   test fails the way a phone would. A feature that needs one polyfills it then.
-
-**Display presets**
-
-Values are formatted through use-intl `formats` that live in `@agent-repo-template/i18n` and are written
-with the first screen on either app that formats a value:
-
-| Kind          | `id`           | `en`           | Pinned options                                                           |
-| ------------- | -------------- | -------------- | ------------------------------------------------------------------------ |
-| Rupiah        | `Rp 1.234.567` | `Rp 1,234,567` | `currency: "IDR"`, `currencyDisplay: "narrowSymbol"`, no fraction digits |
-| Date          | `2 Okt 2026`   | `2 Oct 2026`   | medium date style                                                        |
-| Time          | `10.04`        | `10:04`        | `hourCycle: "h23"`                                                       |
-| Other numbers | `1.234`        | `1,234`        | grouping by language                                                     |
 
 ## Errors
 
@@ -351,11 +277,7 @@ its screen from `src/ui/`:
 
 ## Tests and lint
 
-- `npm run lint -w mobile` runs `scripts/lint.sh`: oxlint, `prettier --check mobile` from the
-  repository root, `expo install --check` offline, `expo customize tsconfig.json` for the route
-  types, then `tsc --noEmit`. It writes only gitignored files.
-- `lint:fix` runs `oxlint --fix`, then `prettier --write mobile` from the repository root. The
-  pre-commit hook runs it before its gate.
+- Lint runs Prettier from the repository root, and writes only gitignored files.
 - Expo-governed packages are installed with `npx expo install`, so `expo install --check` passes.
 - Jest runs through the `jest-expo` preset. Tests are colocated as `*.test.ts(x)`.
 - `jest.setup.ts` copies `environments/dev.env` into each test file's `process.env`, deletes the `Intl` members Hermes lacks and loads
@@ -370,3 +292,9 @@ its screen from `src/ui/`:
   `src/lib/i18n/messages.ts`, never a mock of use-intl.
 - A route test renders through `await renderRouter(...)` from `expo-router/testing-library`.
 - A test whose outcome depends on the device language mocks expo-localization's hooks.
+
+## Shared with web
+
+[`.claude/rules/apps/shared.md`](../.claude/rules/apps/shared.md) loads with every file under `mobile/`.
+It holds what both apps follow: absolute imports, the file layout within a folder, the `Icon` atom,
+camelCase props, the catalogue rules, the display presets and four re-render rules.

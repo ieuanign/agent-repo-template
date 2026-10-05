@@ -12,7 +12,7 @@ The Next.js web app, server-rendered with the App Router, behind Traefik at `/`
 | Styling       | Tailwind CSS v4 through PostCSS, with `@agent-repo-template/design-tokens`     | colours outside the tokens                |
 | Components    | shadcn/ui on Radix, copied into `src/components/`                              |                                           |
 | Animation     | motion through `LazyMotion` and `m.*`; `tw-animate-css` in the kit             | the full `motion.*`                       |
-| Icons         | Tabler, through the one `Icon` atom                                            |                                           |
+| Icons         | an icon library, through the one `Icon` atom                                   |                                           |
 | Translation   | next-intl, without its locale routing                                          | a locale URL segment; i18next             |
 | Fonts         | `next/font`, with Inter self-hosted at build                                   | a font CDN at runtime                     |
 | Lint          | oxlint                                                                         | ESLint; `next lint`                       |
@@ -23,30 +23,18 @@ The Next.js web app, server-rendered with the App Router, behind Traefik at `/`
 | Configuration | the hand-written env helper                                                    | a validation library                      |
 | Logging       | the console, through one reporting function                                    | a logging library                         |
 
+motion, `tw-animate-css` and an icon library are not installed yet; their rows and rules bind the first
+use.
+
 ## Layout
 
-```
-src/instrumentation.ts  # register: logs the startup line and starts the backend report
-src/app/                # routing only: layout, pages, metadata, global CSS and the theme reset
-src/ui/<View>/          # one route's view, mirroring src/app
-src/core/               # constants, env and utilities
-src/core/http.ts        # the one place a backend client is built
-src/core/apiUrls.ts     # API_URLS: every backend path web calls
-src/components/         # the kit: a one-file component flat, a larger one in its own folder
-src/lib/utils.ts        # cn, the kit's class-name merge
-src/lib/i18n/           # next-intl's request configuration and the locale resolver
-src/mocks/              # the MSW server and its default handlers, for Jest
-messages/               # web's own id and en catalogues; shared text comes from @agent-repo-template/i18n
-```
+The tree is in [`README.md`](./README.md#project-structure).
 
 - `src/app/` holds routing only. A route file renders its view and sets metadata; the markup lives in
   the view.
 - One view per route lives in `src/ui/<View>/`, mirroring the routes.
 - `src/core/` holds constants, env and utilities; `src/lib/` holds third-party setup.
-- `src/components/`, `src/lib/`, `src/context/` and `src/hooks/` are created when they first hold
-  something, never ahead of it.
-- Imports are absolute: `@/` for `src/`, `@messages/` for the catalogues. Never a relative path, not
-  even to a file beside the importer.
+- `src/context/` and `src/hooks/` are created when they first hold something, never ahead of it.
 - There is no domain-module layer. Nothing lives under `src/app/api/`: Traefik sends `/api` to
   backend, so a web route there is unreachable.
 
@@ -74,39 +62,19 @@ view's folder; it earns a place in `src/components/` when a second view wants it
 the production image builds on Linux, which is case-sensitive. A folder's entry is `index.tsx`.
 oxlint enforces it under `src/components/` and `src/ui/`.
 
-**A file copied from the kit is edited before it is committed.** Every colour and radius class names
-a token, the file goes into `src/components/` with its `cva` variants split into `styles.ts`, and a
+**A file copied from the kit is edited before it is committed.** Every colour, radius and font class
+names a token, the file goes into `src/components/` with its `cva` variants split into `styles.ts`, and a
 lowercase import the copy carries
-(`@/components/button`) is fixed to the PascalCase file by hand.
+(`@/components/button`) is fixed to the PascalCase file by hand. `cn` is `src/lib/utils.ts`.
 
 **Animation is the exception, and changes only `transform` and `opacity`.** motion comes in through
 `LazyMotion` with `domAnimation` and animates `m.*` elements; `tw-animate-css` drives the kit's own
 opening and closing.
 
-**Icons come through one `Icon` atom with a fixed stroke width**, the one place icons are imported,
-with named imports from `@tabler/icons-react`.
-
-**Props are camelCase.** An API field's name stops at the destructure that reads it.
+**`Icon` re-exports with named imports, and every icon renders at one fixed stroke width.**
 
 **`"use client"` goes on the leaf that needs state**, never the section containing it — everything
 below the directive is client code, so hoisting it ships the whole subtree.
-
-## File layout within a folder
-
-The component file builds the component. Everything else has a home beside it:
-
-```
-src/ui/<View>/ or src/components/<Name>/
-  index.tsx          # the component and its markup — a route renders its view's
-  styles.ts          # the component's cva variants
-  constants.ts       # literals, lookup tables, copy, tuning values
-  utils.ts           # pure functions — formatting, parsing, deriving
-  *.test.ts(x)       # colocated
-```
-
-**Variants live in `styles.ts`**, so the component file names its classes and never declares them.
-**Constants live in `constants.ts`**; one shared across views moves to `src/core/`. **Pure functions
-live in `utils.ts`**, which is also what lets them be tested without rendering.
 
 ## React practice
 
@@ -126,18 +94,13 @@ live in `utils.ts`**, which is also what lets them be tested without rendering.
 
 **Bundle**
 
-- Import the exact module, never a barrel re-export. A package Next's `optimizePackageImports`
-  rewrites to the exact module at build, such as `@tabler/icons-react`, takes named imports.
+- Import the exact module, never a barrel re-export; `src/components/Icon` is the one exception. A
+  package Next's `optimizePackageImports` rewrites to the exact module at build takes named imports.
 - Heavy client components come in through `next/dynamic`.
 - Import paths stay statically analysable — a computed path bundles the whole directory.
 
 **Re-renders**
 
-- Subscribe to the narrowest thing: a derived boolean over the raw object, and nothing for a value
-  only an event handler reads.
-- Derived values compute during render; an effect that syncs one into state renders twice.
-- Effect dependencies are primitives, not freshly built objects.
-- A costly initial value takes the callback form: `useState(() => parse(raw))`.
 - `memo` answers a measured problem. A component taking only primitive props does not need it.
 - `useTransition` drives pending UI in preference to a hand-managed flag.
 
@@ -153,45 +116,32 @@ live in `utils.ts`**, which is also what lets them be tested without rendering.
 - The shared tokens file never holds a reset, because mobile compiles it
   ([design-tokens README](../packages/design-tokens/README.md)). Resets live only in
   `theme-reset.css`.
-- The colours are the kits' 19 names, each with a light and a dark value: `background`,
-  `foreground`, `card`, `card-foreground`, `popover`, `popover-foreground`, `primary`,
-  `primary-foreground`, `secondary`, `secondary-foreground`, `muted`, `muted-foreground`, `accent`,
-  `accent-foreground`, `destructive`, `destructive-foreground`, `border`, `input` and `ring`.
+- The colour, radius and font tokens carry the kits' own names, in
+  [`theme.css`](../packages/design-tokens/theme.css).
 - `globals.css` declares the `light` and `dark` custom variants. A `light` or `dark` class on an
   element or an ancestor picks that theme; with neither, the device's colour scheme does, so the
   first paint follows the device with no script.
 - The base layer in `globals.css` paints `body` with `bg-background text-foreground` and gives every
   element `border-border` and an outline from `ring`.
-- The radius has five steps: `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl` and
-  `rounded-4xl`.
 - No hex colour literal appears under `web/`, in code, CSS or docs.
-- Every numeric spacing class is its number times the 4px base, so `p-4` is 16px. Tailwind's own
-  spacing is not reset; the tokens' base replaces it.
-- Named spacing steps take role names such as `gutter` or `section`, never Tailwind's size words
-  (`xs`, `sm`, `md`, `lg`, `xl` and the rest), because `w-*`, `min-w-*`, `max-w-*` and `basis-*`
-  read spacing before container sizes.
+- Tailwind's own spacing is not reset; the tokens' base replaces it. The 4px grid and the naming rule
+  for spacing steps are in the [design-tokens README](../packages/design-tokens/README.md#spacing).
 - Inter comes through `next/font/google`, self-hosted at build. `globals.css` points `--font-sans` at
   next/font's variable in an `@theme inline` block after the tokens import.
 
 ## Configuration and startup
 
 - Settings come from the environment when the container starts: Compose's `environment:` in dev, and
-  `ops/env/<environment>.env` in staging and production
+  `ops/env/<environment>.env` in staging and production, once `ops/` exists
   ([ADR 0005](../docs/adr/0005-deployment-topology.md)).
 - They are read through `withDefault` in `src/core/env.ts` at the moment they are needed, never held
   in module-level constants or in `next.config`'s `env`. Nothing is baked in per environment at build.
   An empty value counts as unset.
 - There is no `NEXT_PUBLIC_*` variable and no boot check.
+- `APP_ENV` is `dev`, `staging` or `production`, and defaults to `dev`.
 
-| Variable       | Notes                                                                       |
-| -------------- | --------------------------------------------------------------------------- |
-| `APP_ENV`      | `dev`, `staging` or `production`; default `dev`                             |
-| `VERSION`      | Default `dev`                                                               |
-| `GIT_SHA`      | Default `dev`; appears only in the startup line                             |
-| `API_BASE_URL` | backend's base URL for server-side calls; default `http://traefik:4008/api` |
-
-- `register` in `src/instrumentation.ts` logs one JSON line per server start, with the keys backend
-  and ai log: `service` (`web`), `version`, `commit` and `environment`. It is the only place the
+- `register` in `src/instrumentation.ts` logs one JSON line per server start: `service` (`web`),
+  `version`, `commit` and `environment`. It is the only place the
   commit appears.
 - `register` then starts the backend report in `src/core/backendReport.ts` without awaiting it. It
   calls backend's liveness route up to 11 times, each try abandoned after 10 s, waiting 2, 4, 8, 16,
@@ -205,52 +155,13 @@ live in `utils.ts`**, which is also what lets them be tested without rendering.
 
 ## Build
 
-- `Dockerfile` builds with the repository root as its context, under the root
-  [`.dockerignore`](../.dockerignore).
-- The `dev` target is `node:24.21.0-bookworm-slim`, pulled through the public ECR mirror
-  (`public.ecr.aws/docker/library/`) and pinned by digest. It copies only the root manifests, web's,
-  design-tokens', api-client's and i18n's, runs `npm ci` from the root lock under `/repo`, then runs
-  Next's binary with `dev` from `/repo/web`. Compose mounts the source.
-- The image is built natively per platform and never cross-built: Next.js and Tailwind ship native
-  binaries per platform, and file events fail under emulation.
-- `next.config.ts` lists `traefik` in `allowedDevOrigins`, because the e2e browser reaches web at
-  `http://traefik:4008` and `next dev` refuses `/_next/*`, the HMR socket included, from any origin
-  it does not list. It affects `next dev` only, never the standalone server, and names a hostname
-  only the Compose network resolves.
-- The production target is the last stage, so the default. Its builder stages use the same pinned
-  `node:24.21.0-bookworm-slim`:
-  - `prune` runs `turbo prune web --docker`, with turbo's version read from the root `package.json`'s
-    `devDependencies.turbo`, never restated;
-  - `install` runs `npm ci` against the pruned lock file only, never `npm install`;
-  - `build` runs `turbo run build --filter=web`. [`turbo.json`](./turbo.json) declares `.next/**`,
-    without `cache/` and `dev/`, as the outputs a cache hit restores.
-- The runner is `gcr.io/distroless/nodejs24-debian12:nonroot`, pinned by digest: Debian 12 on both
-  sides, so native packages traced into the standalone server run. It never uses `:debug` or
-  overrides `USER`.
-- The runner holds exactly three root-owned copies from the build stage: the standalone folder at `/`,
-  and `.next/static` and `public` beside `/web/server.js`. No other `COPY`, no `RUN`, no `--chown`.
-- Its ENV is exactly `HOSTNAME=0.0.0.0`, `PORT=3000`, `KEEP_ALIVE_TIMEOUT=95000`, `VERSION` and
-  `GIT_SHA`. `VERSION` and `GIT_SHA` are build args defaulting to `dev`, with no turbo `env` entry,
-  since nothing in `next build` reads them. No stage sets `APP_ENV`, a `NEXT_PUBLIC_*` variable or a
-  secret: one image is promoted across environments. 95 000 ms outlasts Traefik's 90 s idle timeout.
-- The `HEALTHCHECK` runs `/nodejs/bin/node -e` with `compose.yaml`'s `web` probe script, fetching
-  `/health/ready`: distroless has no shell, and `/nodejs/bin` is not on its `PATH`. The zero-downtime
-  deploy waits on it ([ADR 0005](../docs/adr/0005-deployment-topology.md)).
-- The command is `/web/server.js` under the image's own node entrypoint, with no npm, `next start` or
-  wrapper, so `SIGTERM` reaches Next.js's handler, which drains in-flight requests.
-- The prune stage copies the whole context into a builder layer, so the root `.dockerignore` keeps
-  out secrets, env files and gitignored local state. Never add a `Dockerfile.dockerignore`: it
-  replaces the root rules.
-- A base bump changes tag and digest together, the digest read from
-  `docker buildx imagetools inspect <image:tag>`.
+The image's rules are in [`.claude/rules/web/build.md`](../.claude/rules/web/build.md), which loads with
+`Dockerfile`, `next.config.ts`, `turbo.json`, `package.json` and the root `.dockerignore`.
 
 ## Tests and lint
 
-- `npm run lint -w web` runs `scripts/lint.sh`: oxlint, then `prettier --check web` from the
-  repository root (Prettier reads its ignore files only from its working directory), then
-  `next typegen` and `tsc --noEmit`. It writes only gitignored files.
-- Fix (`lint:fix`): `scripts/lint-fix.sh` runs `oxlint --fix`, then `prettier --write web` from the
-  repository root. The pre-commit hook runs it before its gate.
+- Lint runs Prettier from the repository root: Prettier reads its ignore files only from its working
+  directory. Lint writes only gitignored files.
 - Jest runs through `next/jest`, with `node` as the default environment; a component test file opts
   into jsdom itself.
 - Tests are colocated as `*.test.ts(x)`.
@@ -289,8 +200,7 @@ response}` arrive as backend sent them. `204` and `304` have no body.
 - `message` is for developers: it goes only to `reportError`, never onto a page.
 - A Server Component handles the failures its page expects and throws only unexpected ones, because
   production reduces a thrown error to a digest.
-- The `errorCode` namespace and the fallback helper arrive with the first page that shows a backend
-  error. `errorCode` lives in `@agent-repo-template/i18n` from its first use, because both apps show it.
+- The fallback helper arrives with `errorCode`, at the first page that shows a backend error.
 
 ## Testing
 
@@ -326,36 +236,11 @@ response}` arrive as backend sent them. `204` and `304` have no body.
   IP address is personal data under UU PDP, and where someone is says nothing about what they read.
 - No locale in the URL. There is no `[locale]` segment and no proxy or middleware; next-intl runs
   without its routing, and `/` serves both languages.
-- Every user-facing string comes from a catalogue, one top-level namespace per view, named after its
-  folder under `src/ui/` in camelCase (`ui/NotFound` → `notFound`). Namespaces and keys are both
-  camelCase at every level. web's own namespaces live in `messages/id.json` and `messages/en.json`,
-  each imported by a literal `@messages/` path; shared namespaces come from
-  [`@agent-repo-template/i18n`](../packages/i18n/README.md). `src/lib/i18n/request.ts` merges the two per
-  language as `{...shared, ...own}`. Every key is in both languages; `tsc` fails when an `en`
-  catalogue lacks a key its `id` has, in web and in the package, and when a web namespace has the
-  same name as a shared one.
-- Identical text is shared; text that differs stays in its app. A whole namespace starts in its app
-  and moves to `@agent-repo-template/i18n` once the other app needs the same text; a namespace is never
-  split, and moving one changes no call site. A shared namespace that loses one of its two apps moves
-  back into the app still reading it, or is deleted if neither does, in the change that drops the
-  last call.
-- The namespace is always a string literal: `useTranslations("errorCode")`, or a sub-namespace such
-  as `"errorCode.project"`. The key may be dynamic (`t(error.code)`). A root translator with a built
-  path is never used. Review enforces it.
+- `src/lib/i18n/request.ts` merges the shared and own catalogues per language.
 - The root layout's `NextIntlClientProvider` receives only the namespaces client components read
   (`error` today), through `pick` in `src/lib/i18n/utils.ts`. Server components read the whole
   catalogue. A new client component adds its namespace to the pick list.
 - `<html lang>` is the resolved locale, read through next-intl's `getLocale()` in the root layout.
-- Values are formatted through display presets, use-intl `formats` that live in
-  `@agent-repo-template/i18n` and are written with the first screen on either app that formats a value:
-
-  | Kind          | `id`           | `en`           | Pinned options                                                           |
-  | ------------- | -------------- | -------------- | ------------------------------------------------------------------------ |
-  | Rupiah        | `Rp 1.234.567` | `Rp 1,234,567` | `currency: "IDR"`, `currencyDisplay: "narrowSymbol"`, no fraction digits |
-  | Date          | `2 Okt 2026`   | `2 Oct 2026`   | medium date style                                                        |
-  | Time          | `10.04`        | `10:04`        | `hourCycle: "h23"`                                                       |
-  | Other numbers | `1.234`        | `1,234`        | grouping by language                                                     |
-
 - After sign-in the rules belong to whichever module owns the signed-in user, which writes the
   cookie. Nothing here writes the cookie, and there is no language switcher.
 
@@ -395,6 +280,12 @@ cover it, each rendering its view from `src/ui/`:
   the 404 page with a `noindex` tag but answer 200
   ([Next.js `loading`, Status Codes](https://nextjs.org/docs/app/api-reference/file-conventions/loading#status-codes)).
   A segment adds its own `loading.tsx` only where it awaits slow data and never calls `notFound()`.
+
+## Shared with mobile
+
+[`.claude/rules/apps/shared.md`](../.claude/rules/apps/shared.md) loads with every file under `web/`. It
+holds what both apps follow: absolute imports, the file layout within a folder, the `Icon` atom,
+camelCase props, the catalogue rules, the display presets and four re-render rules.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
