@@ -24,6 +24,7 @@
       "unset GH_TOKEN GITHUB_TOKEN GH_ENTERPRISE_TOKEN",
       "mkdir -p \"$GH_CONFIG_DIR\"",
       "git config core.hooksPath .githooks",
+      "case \"$(git remote get-url origin 2>/dev/null)\" in *ieuanign/agent-repo-template|*ieuanign/agent-repo-template.git) ;; *) git remote get-url template >/dev/null 2>&1 || git remote add template https://github.com/ieuanign/agent-repo-template.git; git config remote.pushDefault >/dev/null || git config remote.pushDefault origin ;; esac",
       "source \"$DEVBOX_PROJECT_ROOT/scripts/xcode-env.sh\""
     ],
     "scripts": {}
