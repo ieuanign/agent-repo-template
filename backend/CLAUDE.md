@@ -18,30 +18,18 @@ The Go API: a modular monolith and the only PostgreSQL client. Decisions with th
 Go tools (oapi-codegen, air, the golang-migrate CLI) are pinned as `tool` directives in `go.mod` and
 run with `go tool …`. Tools that are not Go modules (squawk) come from devbox.
 
-**Never copy code from the proprietary Spenmo go-sdk.** Ideas may be reimplemented from scratch.
-
 ## Layout
 
+The tree is in [`README.md`](./README.md#project-structure).
+
+- `cmd/server` is the composition root.
+- `gen/` is generated and never hand-edited: `ai/v1/` by buf from `../proto`, `openapi/` by
+  oapi-codegen from `api/openapi.yaml`, which is written by hand.
+- `internal/platform/` is infrastructure, never business logic.
+
+No module and no `internal/bff/` exists yet. Each takes this shape:
+
 ```
-cmd/server/         # composition root: config, logger, pool, ai connection, modules, gin;
-                    # `server healthcheck`
-cmd/migrate/        # golang-migrate over the embedded migrations, with the guards below
-cmd/seed/           # dev-only: every module's seeder, in wiring order
-api/openapi.yaml    # the HTTP contract, written by hand
-gen/                # generated, never hand-edited
-  ai/v1/            # buf, from ../proto
-  openapi/          # oapi-codegen, from api/openapi.yaml
-migrations/         # <timestamp>_<module>_<desc>.{up,down}.sql, embedded by migrations.go
-scripts/            # lint.sh, and migrationlint: guards 6–8 over migrations/
-internal/platform/  # infrastructure, never business logic
-  ai/               # the one gRPC connection to ai, and the startup report
-  apperr/           # global error kinds and the error type modules refine
-  buildinfo/        # version and commit, stamped with -ldflags at build time
-  config/           # the root Config, parsed from the environment
-  database/         # sqlx pool
-  logger/           # zap, and the request-id middleware
-internal/api/       # composes module handlers into the generated interface; envelope,
-                    # error mapper, health, docs
 internal/bff/       # endpoints composing two or more modules' public reads, one file each
 internal/modules/<m>/
   module.go         # constructor; hands its handler to the composition root
@@ -55,6 +43,8 @@ internal/modules/<m>/
 ```
 
 ## Modules
+
+These bind the first module and the first `bff/` handler.
 
 - Inside a module the flow is `handler → service → repository`. Repository rows map to `model` types
   at the repository boundary; generated API types map at the handler boundary.
@@ -75,7 +65,7 @@ internal/modules/<m>/
 - `api/openapi.yaml` is the single spec; `servers` is `/api` and every route is mounted under it,
   because Traefik forwards the prefix unstripped.
 - `internal/api` embeds one interface per module plus a `BFFAPI` into the struct that satisfies the
-  generated `StrictServerInterface`.
+  generated `StrictServerInterface`. Nothing is embedded yet.
 - Every request is validated against the spec before a handler runs; a failure is `VALIDATION`.
   Services still enforce business rules.
 - Every response is `{meta, status, code, message, payload}`, written by the envelope middleware.
@@ -92,7 +82,7 @@ internal/modules/<m>/
   more specific applies.
 - A module's own errors live in its `model/errors.go`, each refining one kind with a code prefixed by
   the module: `apperr.New(apperr.Conflict, "PROJECTS_PROJECT_LOCKED", "The project is locked")`.
-- Wrap on the way up: `fmt.Errorf("approving the estimate: %w", err)`.
+- Wrap on the way up: `fmt.Errorf("locking the project: %w", err)`.
 - Exactly one kind→HTTP mapping point, in `internal/api`. Anything that is not an `apperr` error is a
   500 `INTERNAL` with a generic message; `err.Error()` never reaches a client.
 - `message` is English, for developers; clients localise by `code`
@@ -122,7 +112,8 @@ internal/modules/<m>/
   golang-migrate does not.
 - Every write touching more than one row runs in one transaction.
 
-Guards — each lives in the binary when a person could bypass `make`, in lint when it concerns files:
+Guards — each lives in the binary when a person could bypass `make`, in lint when it concerns files.
+Guards 6–8 are `scripts/migrationlint`, which cites them by number, so the numbering below is fixed:
 
 1. `down` and `redo` refuse unless `APP_ENV=dev`, checked by the `migrate` binary itself.
 2. `force` needs `version=N` and `confirm=<database name>`, and prints the current version and dirty
@@ -139,16 +130,16 @@ Guards — each lives in the binary when a person could bypass `make`, in lint w
 8. squawk flags renames, drops, type changes and new `NOT NULL`s; a flagged statement needs an
    explicit ignore comment marking it as the second, removing release, on its own line directly
    above it: `-- squawk-ignore <rule>[, <rule>…] -- second release: <why the old shape can go>`.
-9. `make rollback` swaps the image only and never runs a migration.
+9. A rollback swaps the image only and never runs a migration.
 
 ## Seed data
 
 - Every module ships a seeder in `internal/seed/`, exposed as `Module.Seed(ctx)` and called only by
-  `cmd/seed`. A feature is not done until its tables have seed data.
+  `cmd/seed`, in wiring order. A feature is not done until its tables have seed data.
 - Seeders write through the module's own service, so seeded data passes the same rules as real
   requests; data from another module comes through its `public.go`.
 - Fixed natural keys (account code `DEMO`), skipping what already exists, so a re-run adds nothing.
-  Fake data only: no real names, NIKs or plates.
+  Fake data only: no real names or identifiers.
 - `cmd/seed` is built only into the `dev` image and also refuses unless `APP_ENV=dev`. A test fails
   when a directory under `internal/modules/` has no registered seeder.
 
@@ -157,14 +148,9 @@ Guards — each lives in the binary when a person could bypass `make`, in lint w
 caarlos0/env parses one root `Config` in `cmd/server`, composed of the platform's and each module's
 sub-configs; boot fails listing every missing or invalid variable at once.
 
-| Variable | Notes |
-| --- | --- |
-| `APP_ENV` | Required: `dev`, `staging` or `production` |
-| `PORT` | Default `8080` |
-| `POSTGRES_HOST`, `POSTGRES_PORT` | Set in Compose; port defaults to `5432` |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | From `secrets/postgres.env`, the same file the PostgreSQL container reads |
-| `AI_HOST` | Required; set to `ai` in Compose |
-| `AI_PORT` | Default `50051`, ai's own default |
+- `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` come from `secrets/postgres.env`, the same
+  file the PostgreSQL container reads.
+- `AI_PORT` defaults to `50051`, ai's own default.
 
 Secret values live only in `secrets/*.sops.env`, split by who reads them; plain settings never go
 there.
@@ -195,24 +181,14 @@ data.
 
 ## Build
 
-`Dockerfile`, built from `backend/`:
-
-- Build stage: `--platform=$BUILDPLATFORM golang:1.27-alpine` through the public ECR mirror
-  (`public.ecr.aws/docker/library/`), which avoids Docker Hub's pull limits; `CGO_ENABLED=0`, so no C
-  library is needed. `-ldflags -X` stamps `VERSION` and `GIT_SHA` into `internal/platform/buildinfo`
-  (both default to `dev`).
-- `dev` target: air over the bind-mounted source, plus the `seed` binary.
-- Production target: `gcr.io/distroless/static-debian12:nonroot` with `server` and `migrate`.
-- Every image reference carries its tag and its multi-arch index digest, so a rebuild never changes
-  base silently. A bump changes both together, the digest read from
-  `docker buildx imagetools inspect <image:tag>`.
+The image's rules are in [`.claude/rules/backend/build.md`](../.claude/rules/backend/build.md), which
+loads with `Dockerfile`, `.dockerignore`, `.air.toml`, `go.mod` and `internal/platform/buildinfo/`.
 
 ## Tests and lint
 
 - Colocated `foo_test.go`, table-driven. Mock through narrow, caller-declared interfaces.
-- SQL is tested with go-sqlmock and handlers with `httptest`; **no test touches a real database**.
-  End-to-end tests belong to web (Playwright) and mobile (Maestro).
-- Lint: `gofmt` check, `go vet`, oapi-codegen regenerate-and-diff (stale `gen/openapi` fails like
-  stale proto code does), squawk, and the migration-file checks above.
-- Fix (`lint:fix`): `gofmt -w .`, the same scope as lint's `gofmt -l .`. The pre-commit hook runs
-  it before its gate.
+- Handlers are tested with `httptest`. SQL is tested with go-sqlmock once a repository exists;
+  go-sqlmock is not a dependency yet. **No test touches a real database**. End-to-end tests belong to
+  web (Playwright) and mobile (Maestro).
+- Lint regenerates `gen/openapi` and diffs it: stale `gen/openapi` fails like stale proto code does.
+- `lint:fix` runs `gofmt -w .`, the same scope as lint's `gofmt -l .`.
