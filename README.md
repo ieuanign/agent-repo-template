@@ -21,10 +21,12 @@ What makes it ready for an agent:
 To rename the project, replace the template's names, then regenerate what embeds them:
 
 ```sh
-git grep -lz 'ieuanign/agent-repo-template' | xargs -0 perl -pi -e 's#ieuanign/agent-repo-template#<owner>/<name>#g'
-git grep -lz 'agent-repo-template' | xargs -0 perl -pi -e 's#agent-repo-template#<name>#g'
+git grep -lz 'ieuanign/agent-repo-template' -- ':!devbox.json' ':!docs/template.md' | xargs -0 perl -pi -e 's#ieuanign/agent-repo-template#<owner>/<name>#g'
+git grep -lz 'agent-repo-template' -- ':!devbox.json' ':!docs/template.md' | xargs -0 perl -pi -e 's#agent-repo-template#<name>#g'
 npm install && npm run generate -w proto
 ```
+
+Both commands leave `devbox.json` and `docs/template.md` alone: they name the template on purpose, so this project can keep taking its changes. [`docs/template.md`](docs/template.md) says how.
 
 The home page's heading is in `packages/i18n/messages/`.
 
@@ -103,7 +105,7 @@ devbox installs a pre-commit hook that fixes and checks the workspaces a commit 
 
 ## Docs
 
-System-wide decisions are recorded in `docs/adr/`; service-scoped ones in `<service>/docs/adr/`. Each service carries a `README.md` for its role and stack and a `CLAUDE.md` for its hard rules; the ones tied to particular files are path-scoped rules under `.claude/rules/`. `CONTEXT-MAP.md` lists the domain contexts and how they relate.
+System-wide decisions are recorded in `docs/adr/`; service-scoped ones in `<service>/docs/adr/`. Each service carries a `README.md` for its role and stack and a `CLAUDE.md` for its hard rules; the ones tied to particular files are path-scoped rules under `.claude/rules/`. [`docs/template.md`](docs/template.md) says how this project takes changes from the template it was made from. `CONTEXT-MAP.md` lists the domain contexts and how they relate.
 
 ## Maintaining the template
 
