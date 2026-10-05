@@ -15,7 +15,9 @@
     "maestro@latest"
   ],
   "env": {
-    "GH_CONFIG_DIR": "$DEVBOX_PROJECT_ROOT/.devbox-state/gh"
+    "GH_CONFIG_DIR": "$DEVBOX_PROJECT_ROOT/.devbox-state/gh",
+    "MAESTRO_CLI_NO_ANALYTICS": "1",
+    "MAESTRO_DISABLE_UPDATE_CHECK": "1"
   },
   "shell": {
     "init_hook": [

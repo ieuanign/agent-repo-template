@@ -37,7 +37,7 @@ The home page's heading is in `packages/i18n/messages/`.
 | AI        | `ai/`      | Python 3.14 + uv, gRPC, modular monolith                                               |
 | Backend   | `backend/` | Go 1.27 (pinned in `devbox.json`), gin, sqlx, oapi-codegen, modular monolith           |
 | Frontend  | `web/`     | Next.js 16.x, Tailwind v4, TanStack Query, zustand, npm                                |
-| Mobile    | `mobile/`  | Expo SDK 57 / React Native 0.86, Uniwind, TanStack Query, zustand, npm                 |
+| Mobile    | `mobile/`  | Expo SDK 58 / React Native 0.88, Uniwind, TanStack Query, zustand, npm                 |
 
 ## Topology
 
@@ -57,6 +57,7 @@ Traefik fronts one host: `/api/*` routes to backend and `/` to web. Each route i
 │   └── i18n/            # locales and catalogue text shared by web and mobile
 ├── proto/               # gRPC contract between backend and ai (buf)
 ├── e2e/                 # Playwright browser suite, run in its own container
+├── e2e-mobile/          # Maestro suite, run on the host
 ├── docs/
 │   └── adr/             # system-wide architecture decision records
 ├── secrets/             # SOPS-encrypted env files (*.sops.env)
@@ -97,6 +98,7 @@ make dev    # start the local stack
 make down   # stop it
 make check  # lint and test everything
 make e2e    # run the browser suite against the running stack
+make e2e-mobile platform=ios|android  # run the Maestro suite on a booted Simulator or Emulator
 ```
 
 devbox installs a pre-commit hook that fixes and checks the workspaces a commit touches: it runs `lint:fix` and stops the commit if that changed a file, leaving the fix unstaged for review, then runs `lint` and `test`; a failure stops the commit.

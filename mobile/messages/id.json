@@ -1,0 +1,10 @@
+{
+  "backend": {
+    "version": "Versi backend: {version}",
+    "loading": "Menghubungkan ke backend…",
+    "unreachable": "Backend tidak dapat dihubungi."
+  },
+  "notFound": {
+    "heading": "Layar tidak ditemukan"
+  }
+}

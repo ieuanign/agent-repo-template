@@ -32,7 +32,7 @@ src/ui/<View>/          # one route's view, mirroring src/app
 src/core/               # constants, env and utilities
 src/core/http.ts        # the one place a backend client is built
 src/core/apiUrls.ts     # API_URLS: every backend path web calls
-src/components/         # the kit: atoms and molecules as flat files, organisms in folders
+src/components/         # the kit: a one-file component flat, a larger one in its own folder
 src/lib/utils.ts        # cn, the kit's class-name merge
 src/lib/i18n/           # next-intl's request configuration and the locale resolver
 src/mocks/              # the MSW server and its default handlers, for Jest
@@ -54,24 +54,29 @@ messages/               # web's own id and en catalogues; shared text comes from
 
 Atomic design. A component is as small as it can usefully be, and its **tier** decides where it lives:
 
-| Tier         | What it is                                                       | Where                    |
-| ------------ | ---------------------------------------------------------------- | ------------------------ |
-| **Atom**     | One element, no domain knowledge — a button, an input, a spinner | `src/components/`        |
-| **Molecule** | A few atoms, one job — a field with its label and error, a toast | `src/components/`        |
-| **Organism** | A composed section — a header, a project summary panel           | `src/components/<Name>/` |
-| **View**     | One route's whole view, assembling the above                     | `src/ui/<View>/`         |
+| Tier         | What it is                                                       | Where             |
+| ------------ | ---------------------------------------------------------------- | ----------------- |
+| **Atom**     | One element, no domain knowledge — a button, an input, a spinner | `src/components/` |
+| **Molecule** | A few atoms, one job — a field with its label and error, a toast | `src/components/` |
+| **Organism** | A composed section — a header, a project summary panel           | `src/components/` |
+| **View**     | One route's whole view, assembling the above                     | `src/ui/<View>/`  |
+
+**A component with more than one file lives in its own folder.** One file stays flat; a second file,
+such as its test or its styles, moves it into `src/components/<Name>/` as `index.tsx`. A view always
+has its folder, where its test, constants and utils collect.
 
 **A component starts local and moves on its second caller.** What one view renders lives in that
 view's folder; it earns a place in `src/components/` when a second view wants it.
 
 **An atom knows nothing about the domain.** Domain vocabulary enters at the organism tier.
 
-**Component files are PascalCase** (`Button.tsx`), and every import names the file in the same case:
+**Component names are PascalCase** (`Button/`), and every import names the file in the same case:
 the production image builds on Linux, which is case-sensitive. A folder's entry is `index.tsx`.
 oxlint enforces it under `src/components/` and `src/ui/`.
 
 **A file copied from the kit is edited before it is committed.** Every colour and radius class names
-a token, the file goes where its atomic tier puts it, and a lowercase import the copy carries
+a token, the file goes into `src/components/` with its `cva` variants split into `styles.ts`, and a
+lowercase import the copy carries
 (`@/components/button`) is fixed to the PascalCase file by hand.
 
 **Animation is the exception, and changes only `transform` and `opacity`.** motion comes in through
@@ -91,13 +96,15 @@ below the directive is client code, so hoisting it ships the whole subtree.
 The component file builds the component. Everything else has a home beside it:
 
 ```
-src/ui/Home/
-  index.tsx          # the component and its markup — the route renders this
+src/ui/<View>/ or src/components/<Name>/
+  index.tsx          # the component and its markup — a route renders its view's
+  styles.ts          # the component's cva variants
   constants.ts       # literals, lookup tables, copy, tuning values
   utils.ts           # pure functions — formatting, parsing, deriving
   *.test.ts(x)       # colocated
 ```
 
+**Variants live in `styles.ts`**, so the component file names its classes and never declares them.
 **Constants live in `constants.ts`**; one shared across views moves to `src/core/`. **Pure functions
 live in `utils.ts`**, which is also what lets them be tested without rendering.
 

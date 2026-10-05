@@ -1,0 +1,13 @@
+appId: com.agent.template
+---
+- launchApp:
+    clearState: true
+# Android's dev client drops a link that arrives while it is still starting.
+- waitForAnimationToEnd
+- openLink: "exp+agent-repo-template://?__expo_url=http%3A%2F%2Flocalhost%3A8081&__expo_disable_onboarding=1&__expo_disable_fab=1&__expo_disable_auto_launch=1"
+# iOS asks "Open in …?" the first time a link opens the app.
+- runFlow:
+    when:
+      visible: Open
+    commands:
+      - tapOn: Open

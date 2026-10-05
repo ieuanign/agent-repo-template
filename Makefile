@@ -19,6 +19,11 @@ help:
 	@echo "make migrate-force version= confirm=  Clears the dirty flag after a failed migration; confirm= names the database"
 	@echo "make seed                             Re-runs the seed data against the Compose PostgreSQL, starting it if down"
 	@echo "make db-reset                         Drops the dev database, then migrates and seeds; destructive"
+	@echo "make ios-build device=                Generates the iOS project, builds the dev client and installs it on a Simulator or the named device"
+	@echo "make ios                              Starts Metro for the dev client already installed on iOS"
+	@echo "make android-build device=            Generates the Android project, builds the dev client and installs it on the Emulator or the named device"
+	@echo "make android                          Starts Metro for the dev client already installed on Android"
+	@echo "make e2e-mobile platform= device=     Runs the Maestro suite on a booted Simulator or Emulator against the running stack and Metro; not part of check"
 
 .PHONY: bootstrap
 bootstrap:
@@ -105,3 +110,60 @@ db-reset: secrets-decrypt
 	docker compose run --rm --build --no-deps seed -reset
 	$(MAKE) migrate-up
 	$(MAKE) seed
+
+.PHONY: ios-build
+# Prebuild always runs first: run:ios generates the project only when ios/ is missing. --clean is passed by hand.
+ios-build:
+	cp mobile/environments/dev.env mobile/.env
+	cd mobile && ../scripts/xcode-env.sh npx expo prebuild --no-install -p ios
+	cd mobile && ../scripts/xcode-env.sh npx expo run:ios$(if $(device), --device "$(device)")
+
+.PHONY: ios
+ios:
+	cp mobile/environments/dev.env mobile/.env
+	npm run ios -w mobile
+
+.PHONY: android-build
+# adb reverse lets the device reach the stack on localhost:4008; ignored with no device attached so expo's own message shows.
+android-build:
+	cp mobile/environments/dev.env mobile/.env
+	-adb reverse tcp:4008 tcp:4008
+	cd mobile && npx expo prebuild --no-install -p android
+	cd mobile && npx expo run:android$(if $(device), --device "$(device)")
+
+.PHONY: android
+android:
+	cp mobile/environments/dev.env mobile/.env
+	-adb reverse tcp:4008 tcp:4008
+	npm run android -w mobile
+
+.PHONY: e2e-mobile
+# Checks and never sets up: each missing prerequisite fails naming its fix. iOS runs xcrun and maestro through xcode-env.sh, as nix's xcrun breaks Maestro's iOS driver.
+e2e-mobile:
+	@case "$(platform)" in ios|android) ;; *) echo "e2e-mobile: platform= must be ios or android" >&2; exit 1;; esac; \
+	app=com.agent.template; wrap=; device="$(device)"; \
+	if [ "$(platform)" = ios ]; then wrap=scripts/xcode-env.sh; fi; \
+	if [ -z "$$device" ]; then \
+		if [ "$(platform)" = ios ]; then \
+			booted=$$(scripts/xcode-env.sh xcrun simctl list devices booted -j | node -e 'const d = JSON.parse(require("fs").readFileSync(0, "utf8")).devices; for (const x of Object.values(d).flat()) if (x.state === "Booted") console.log(`$${x.udid} $${x.name}`)'); \
+		else \
+			booted=$$(adb devices | awk 'NR > 1 && $$2 == "device" { print $$1 }'); \
+		fi; \
+		n=$$(printf '%s\n' "$$booted" | grep -c .); \
+		if [ "$$n" != 1 ]; then echo "e2e-mobile: $$n booted $(platform) devices, need exactly one; boot a Simulator or Emulator, or pass device=<id>" >&2; [ -z "$$booted" ] || echo "$$booted" >&2; exit 1; fi; \
+		device="$${booted%% *}"; \
+	fi; \
+	resp=$$(curl -s --max-time 5 -w ' %{http_code}' http://localhost:4008/api/health); body="$${resp% *}"; \
+	if [ "$${resp##* }" != 200 ]; then echo "e2e-mobile: http://localhost:4008/api/health is not up; run make dev" >&2; exit 1; fi; \
+	if [ "$$(curl -s -o /dev/null --max-time 5 -w '%{http_code}' http://localhost:8081/status)" != 200 ]; then echo "e2e-mobile: Metro is not running on localhost:8081; run make ios or make android" >&2; exit 1; fi; \
+	if [ "$(platform)" = ios ]; then scripts/xcode-env.sh xcrun simctl get_app_container "$$device" $$app >/dev/null 2>&1; \
+	else adb -s "$$device" shell pm path $$app 2>/dev/null | grep -q '^package:'; fi \
+		|| { echo "e2e-mobile: $$app is not installed on $$device; run make ios-build or make android-build" >&2; exit 1; }; \
+	if [ "$(platform)" = android ]; then \
+		adb -s "$$device" reverse tcp:4008 tcp:4008 >/dev/null && adb -s "$$device" reverse tcp:8081 tcp:8081 >/dev/null \
+			|| { echo "e2e-mobile: adb reverse failed on $$device" >&2; exit 1; }; \
+	fi; \
+	version=$$(BODY="$$body" node -e 'process.stdout.write(String(JSON.parse(process.env.BODY).payload?.version ?? ""))'); \
+	if [ -z "$$version" ]; then echo "e2e-mobile: /api/health body lacks payload.version: $$body" >&2; exit 1; fi; \
+	rm -rf e2e-mobile/.output/$(platform); \
+	$$wrap maestro --device "$$device" test -e BACKEND_VERSION="$$version" --test-output-dir e2e-mobile/.output/$(platform) e2e-mobile

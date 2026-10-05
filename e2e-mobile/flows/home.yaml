@@ -1,0 +1,12 @@
+appId: com.agent.template
+onFlowStart:
+  - startRecording: home
+onFlowComplete:
+  - stopRecording
+---
+- runFlow: ../subflows/open-dev-build.yaml
+# Text selectors are full-match regexes, so either device language passes.
+- extendedWaitUntil:
+    visible: "(Versi backend|Backend version): ${BACKEND_VERSION}"
+    timeout: 120000
+- takeScreenshot: home

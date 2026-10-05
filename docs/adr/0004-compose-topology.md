@@ -9,5 +9,5 @@ Local development runs PostgreSQL, Traefik, backend, ai and web in Docker Compos
 
 ## Consequences
 
-- Clients reach the API at `http://host.docker.internal:4008/api`; mobile overrides it with `EXPO_PUBLIC_API_URL`.
+- Clients on the host reach the API at `http://localhost:4008/api`; mobile sets it in `EXPO_PUBLIC_API_URL`.
 - Traefik forwards `/api` unstripped: backend owns its prefix, so every URL is the same inside and outside the proxy.

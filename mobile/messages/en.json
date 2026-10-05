@@ -1,0 +1,10 @@
+{
+  "backend": {
+    "version": "Backend version: {version}",
+    "loading": "Reaching backend…",
+    "unreachable": "Backend unreachable."
+  },
+  "notFound": {
+    "heading": "Screen not found"
+  }
+}
