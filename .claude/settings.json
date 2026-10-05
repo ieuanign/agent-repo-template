@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "deny": [
+      "Bash(git worktree remove* --f*)",
+      "Bash(git worktree remove* -f*)",
+      "Bash(git -C * worktree remove* --f*)",
+      "Bash(git -C * worktree remove* -f*)"
+    ]
+  },
   "extraKnownMarketplaces": {
     "ieuanign": {
       "source": {
