@@ -15,8 +15,15 @@ What makes it ready for an agent:
 2. Install [devbox](https://www.jetify.com/devbox) and Docker, then run `devbox shell`. It provides every other tool and installs the pre-commit hook.
 3. Inside devbox, run `gh auth login`. devbox keeps gh's login inside the repository, apart from your global one.
 4. Create your age key yourself, as Section "Getting access", step 1, of [`docs/secrets.md`](docs/secrets.md) says.
-5. Run `npm ci`, then `make bootstrap`. It creates the issue labels the skills use, installs the `gh stack` extension, adds your key as the first SOPS recipient and encrypts generated local database credentials. Commit `.sops.yaml` and `secrets/postgres.sops.env`.
-6. Run `make check`. When it passes, open Claude Code in the repository, trust the folder and install the plugins it offers. File an issue and run `/dev-loop <issue number>`.
+5. Replace the template's secrets with your own. The template ships its maintainer's recipient and credentials only that key decrypts, so remove both:
+
+   ```sh
+   rm secrets/postgres.sops.env
+   perl -0pi -e 's/    age:\n(?:      - .*\n)+/    age: []\n/' .sops.yaml
+   ```
+
+6. Run `npm ci`, then `make bootstrap`. It creates the issue labels the skills use, installs the `gh stack` extension, adds your key as the first SOPS recipient and encrypts newly generated local database credentials. Commit `.sops.yaml` and `secrets/postgres.sops.env`.
+7. Run `make check`. When it passes, open Claude Code in the repository, trust the folder and install the plugins it offers. File an issue and run `/dev-loop <issue number>`.
 
 To rename the project, replace the template's names, then regenerate what embeds them:
 
@@ -109,4 +116,4 @@ System-wide decisions are recorded in `docs/adr/`; service-scoped ones in `<serv
 
 ## Maintaining the template
 
-Work on the template itself the way any project from it works, with one exception: `make bootstrap` writes your recipient into `.sops.yaml` and creates `secrets/postgres.sops.env`, and neither is ever committed here. A project made from the template must start with no recipients, so its first `make bootstrap` adds its own.
+Work on the template itself the way any project from it works. The template commits its maintainer's recipient in `.sops.yaml` and the `secrets/postgres.sops.env` encrypted to it, so `make check` runs here from a fresh checkout. Only that key decrypts them, which is why step 5 of starting a project replaces both.
