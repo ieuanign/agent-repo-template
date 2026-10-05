@@ -14,7 +14,7 @@ Traefik, and calls ai over gRPC through a generated client.
 | Config | caarlos0/env, from environment variables only |
 | Logging | zap |
 | Hot reload | air, in the dev image only |
-| Tests | `go test`, go-sqlmock, `httptest` |
+| Tests | `go test`, `httptest` |
 
 ## Project structure
 
