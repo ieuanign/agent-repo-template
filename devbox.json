@@ -16,6 +16,8 @@
   ],
   "env": {
     "GH_CONFIG_DIR": "$DEVBOX_PROJECT_ROOT/.devbox-state/gh",
+    "GOFLAGS": "-trimpath",
+    "GOTMPDIR": "$DEVBOX_PROJECT_ROOT/.devbox-state/go-tmp",
     "MAESTRO_CLI_NO_ANALYTICS": "1",
     "MAESTRO_DISABLE_UPDATE_CHECK": "1"
   },
@@ -23,6 +25,7 @@
     "init_hook": [
       "unset GH_TOKEN GITHUB_TOKEN GH_ENTERPRISE_TOKEN",
       "mkdir -p \"$GH_CONFIG_DIR\"",
+      "mkdir -p \"$GOTMPDIR\" && find \"$GOTMPDIR\" -mindepth 1 -maxdepth 1 -name 'go-build*' -mmin +120 -exec rm -rf {} +",
       "git config core.hooksPath .githooks",
       "case \"$(git remote get-url origin 2>/dev/null)\" in *ieuanign/agent-repo-template|*ieuanign/agent-repo-template.git) ;; *) git remote get-url template >/dev/null 2>&1 || git remote add template https://github.com/ieuanign/agent-repo-template.git; git config remote.pushDefault >/dev/null || git config remote.pushDefault origin ;; esac",
       "source \"$DEVBOX_PROJECT_ROOT/scripts/xcode-env.sh\""
